@@ -116,46 +116,43 @@ class _MemoAppState extends State<MemoApp> {
             ),
           ),
           Expanded(
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8.0,
-                mainAxisSpacing: 8.0,
-              ),
+            child: Padding(
               padding: const EdgeInsets.all(8.0),
-              itemCount: _memos.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  color: Colors.blue.shade100,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Text(
-                              _memos[index],
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: _memos.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final memo = entry.value;
+                    return Card(
+                      color: Colors.blue.shade100,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              memo,
                               style: TextStyle(fontSize: 16),
                             ),
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                _deleteMemo(index);
-                              },
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  _deleteMemo(index);
+                                },
+                              ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
           ),
         ],
