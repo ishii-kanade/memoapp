@@ -37,6 +37,7 @@ class _MemoAppState extends State<MemoApp> {
 
   Future<File> _getMemoFile() async {
     final directory = await getApplicationDocumentsDirectory();
+    print("path::" + directory.path);
     return File('${directory.path}/memos.json');
   }
 
@@ -83,6 +84,48 @@ class _MemoAppState extends State<MemoApp> {
     _saveMemos();
   }
 
+  void _editMemo(int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController editController = TextEditingController();
+        editController.text = _memos[index]; // 現在のメモを編集用に設定
+
+        return AlertDialog(
+          title: Text("メモを編集"),
+          content: TextField(
+            controller: editController,
+            maxLines: null, // 自動改行を有効にする
+            decoration: InputDecoration(
+              labelText: 'メモを編集してください',
+              border: OutlineInputBorder(), // 枠線を追加
+            ),
+            keyboardType: TextInputType.multiline, // 改行を許可
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("キャンセル"),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _memos[index] = editController.text; // メモを更新
+                });
+                _saveMemos(); // 更新後に保存
+                Navigator.of(context).pop();
+              },
+              child: Text("保存"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,11 +141,15 @@ class _MemoAppState extends State<MemoApp> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    maxLines: null, // 自動改行を有効にする
                     decoration: InputDecoration(
                       labelText: 'メモを入力してください',
+                      border: OutlineInputBorder(), // 枠線を追加
                     ),
+                    keyboardType: TextInputType.multiline, // 改行を許可
                   ),
                 ),
+
                 IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
@@ -125,28 +172,35 @@ class _MemoAppState extends State<MemoApp> {
                   children: _memos.asMap().entries.map((entry) {
                     final index = entry.key;
                     final memo = entry.value;
-                    return Card(
-                      color: Colors.blue.shade100,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              memo,
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  _deleteMemo(index);
-                                },
+                    return InkWell(
+                      onTap: () {
+                        _editMemo(index); // タップ時に編集ダイアログを開く
+                      },
+                      borderRadius: BorderRadius.circular(8.0), // 波紋アニメーションの範囲を指定
+                      splashColor: Colors.blue.shade200, // 波紋の色を指定
+                      child: Card(
+                        color: Colors.blue.shade100,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                memo,
+                                style: TextStyle(fontSize: 16),
                               ),
-                            ),
-                          ],
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    _deleteMemo(index);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
