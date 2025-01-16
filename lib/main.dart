@@ -20,13 +20,25 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class Memo {
+  String text;
+  bool isPinned;
+
+  Memo({required this.text, this.isPinned = false});
+
+  Map<String, dynamic> toJson() => {'text': text, 'isPinned': isPinned};
+
+  factory Memo.fromJson(Map<String, dynamic> json) =>
+      Memo(text: json['text'], isPinned: json['isPinned'] ?? false);
+}
+
 class MemoApp extends StatefulWidget {
   @override
   _MemoAppState createState() => _MemoAppState();
 }
 
 class _MemoAppState extends State<MemoApp> {
-  List<String> _memos = [];
+  List<Memo> _memos = [];
   TextEditingController _controller = TextEditingController();
 
   @override
@@ -48,11 +60,10 @@ class _MemoAppState extends State<MemoApp> {
         final content = await file.readAsString();
         final List<dynamic> jsonMemos = jsonDecode(content);
         setState(() {
-          _memos = jsonMemos.cast<String>();
+          _memos = jsonMemos.map((e) => Memo.fromJson(e)).toList();
         });
       }
     } catch (e) {
-      // エラー時は空のリストを使う
       setState(() {
         _memos = [];
       });
@@ -62,17 +73,16 @@ class _MemoAppState extends State<MemoApp> {
   Future<void> _saveMemos() async {
     try {
       final file = await _getMemoFile();
-      final content = jsonEncode(_memos);
+      final content = jsonEncode(_memos.map((e) => e.toJson()).toList());
       await file.writeAsString(content);
     } catch (e) {
-      // エラー時の処理
       print('Failed to save memos: $e');
     }
   }
 
   void _addMemo(String memo) {
     setState(() {
-      _memos.add(memo);
+      _memos.add(Memo(text: memo));
     });
     _saveMemos();
   }
@@ -89,18 +99,18 @@ class _MemoAppState extends State<MemoApp> {
       context: context,
       builder: (BuildContext context) {
         TextEditingController editController = TextEditingController();
-        editController.text = _memos[index]; // 現在のメモを編集用に設定
+        editController.text = _memos[index].text;
 
         return AlertDialog(
           title: Text("メモを編集"),
           content: TextField(
             controller: editController,
-            maxLines: null, // 自動改行を有効にする
+            maxLines: null,
             decoration: InputDecoration(
               labelText: 'メモを編集してください',
-              border: OutlineInputBorder(), // 枠線を追加
+              border: OutlineInputBorder(),
             ),
-            keyboardType: TextInputType.multiline, // 改行を許可
+            keyboardType: TextInputType.multiline,
           ),
           actions: [
             TextButton(
@@ -112,9 +122,9 @@ class _MemoAppState extends State<MemoApp> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  _memos[index] = editController.text; // メモを更新
+                  _memos[index].text = editController.text;
                 });
-                _saveMemos(); // 更新後に保存
+                _saveMemos();
                 Navigator.of(context).pop();
               },
               child: Text("保存"),
@@ -125,6 +135,13 @@ class _MemoAppState extends State<MemoApp> {
     );
   }
 
+  void _togglePin(int index) {
+    setState(() {
+      _memos[index].isPinned = !_memos[index].isPinned;
+      _memos.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+    });
+    _saveMemos();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,15 +158,14 @@ class _MemoAppState extends State<MemoApp> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    maxLines: null, // 自動改行を有効にする
+                    maxLines: null,
                     decoration: InputDecoration(
                       labelText: 'メモを入力してください',
-                      border: OutlineInputBorder(), // 枠線を追加
+                      border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.multiline, // 改行を許可
+                    keyboardType: TextInputType.multiline,
                   ),
                 ),
-
                 IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
@@ -174,12 +190,14 @@ class _MemoAppState extends State<MemoApp> {
                     final memo = entry.value;
                     return InkWell(
                       onTap: () {
-                        _editMemo(index); // タップ時に編集ダイアログを開く
+                        _editMemo(index);
                       },
-                      borderRadius: BorderRadius.circular(8.0), // 波紋アニメーションの範囲を指定
-                      splashColor: Colors.blue.shade200, // 波紋の色を指定
+                      borderRadius: BorderRadius.circular(8.0),
+                      splashColor: Colors.blue.shade200,
                       child: Card(
-                        color: Colors.blue.shade100,
+                        color: memo.isPinned
+                            ? Colors.yellow.shade100
+                            : Colors.blue.shade100,
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
@@ -187,17 +205,32 @@ class _MemoAppState extends State<MemoApp> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                memo,
+                                memo.text,
                                 style: TextStyle(fontSize: 16),
                               ),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
-                                    _deleteMemo(index);
-                                  },
-                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      memo.isPinned
+                                          ? Icons.push_pin
+                                          : Icons.push_pin_outlined,
+                                      color: memo.isPinned
+                                          ? Colors.orange
+                                          : Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      _togglePin(index);
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () {
+                                      _deleteMemo(index);
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
