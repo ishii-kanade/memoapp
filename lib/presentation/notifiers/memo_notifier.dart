@@ -16,8 +16,6 @@ class MemoNotifier extends ChangeNotifier {
   List<MemoEntity> memos = [];
 
   Future<void> loadMemos() async {
-    // getMemosUseCase() が返すリストの型は実際は List<MemoModel> かもしれないので、
-    // 新たに List<MemoEntity> 型として再生成する
     memos = List<MemoEntity>.from(await getMemosUseCase());
     notifyListeners();
   }
