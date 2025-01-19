@@ -20,16 +20,17 @@ class MemoNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addMemo(String text) async {
-    memos.add(MemoEntity(text: text));
+  Future<void> addMemo(String text, {List<String> tags = const []}) async {
+    memos.add(MemoEntity(text: text, tags: tags));
     await saveMemosUseCase(memos);
     notifyListeners();
   }
 
-  Future<void> updateMemo(int index, String newText) async {
+  Future<void> updateMemo(int index, {required String newText, required List<String> newTags}) async {
     final old = memos[index];
     memos[index] = MemoEntity(
       text: newText,
+      tags: newTags,
       isPinned: old.isPinned,
     );
     await saveMemosUseCase(memos);
@@ -46,6 +47,7 @@ class MemoNotifier extends ChangeNotifier {
     final old = memos[index];
     memos[index] = MemoEntity(
       text: old.text,
+      tags: old.tags,
       isPinned: !old.isPinned,
     );
     memos.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));

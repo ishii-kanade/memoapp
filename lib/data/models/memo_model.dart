@@ -4,12 +4,16 @@ class MemoModel extends MemoEntity {
   const MemoModel({
     required super.text,
     super.isPinned,
+    super.tags,
   });
 
   factory MemoModel.fromJson(Map<String, dynamic> json) {
     return MemoModel(
       text: json['text'] as String,
-      isPinned: (json['isPinned'] ?? false) as bool,
+      isPinned: json['isPinned'] as bool? ?? false,
+      tags: (json['tags'] as List<dynamic>?)
+          ?.map((tag) => tag as String)
+          .toList() ?? [],
     );
   }
 
@@ -17,6 +21,7 @@ class MemoModel extends MemoEntity {
     return {
       'text': text,
       'isPinned': isPinned,
+      'tags': tags,
     };
   }
 }

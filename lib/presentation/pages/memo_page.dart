@@ -10,7 +10,8 @@ class MemoPage extends StatefulWidget {
 }
 
 class _MemoPageState extends State<MemoPage> {
-  final _controller = TextEditingController();
+  final _textController = TextEditingController();
+  final _tagController = TextEditingController();
 
   @override
   void initState() {
@@ -19,6 +20,13 @@ class _MemoPageState extends State<MemoPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MemoNotifier>().loadMemos();
     });
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _tagController.dispose();
+    super.dispose();
   }
 
   @override
@@ -32,31 +40,49 @@ class _MemoPageState extends State<MemoPage> {
       ),
       body: Column(
         children: [
-          // 入力フォーム
+          // 新規メモ入力フォーム
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
+            child: Column(
               children: [
-                // メモ入力フィールド
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    maxLines: null,
-                    decoration: const InputDecoration(
-                      labelText: 'メモを入力してください',
-                      border: OutlineInputBorder(),
-                    ),
+                // メモの本文入力フィールド
+                TextField(
+                  controller: _textController,
+                  maxLines: null,
+                  decoration: const InputDecoration(
+                    labelText: 'メモを入力してください',
+                    border: OutlineInputBorder(),
                   ),
                 ),
+                const SizedBox(height: 8.0),
+                // タグ入力フィールド（カンマ区切りで複数入力）
+                TextField(
+                  controller: _tagController,
+                  decoration: const InputDecoration(
+                    labelText: 'タグを入力してください (例: 仕事,プライベート)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8.0),
                 // 追加ボタン
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    if (_controller.text.isNotEmpty) {
-                      memoNotifier.addMemo(_controller.text);
-                      _controller.clear();
-                    }
-                  },
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('追加'),
+                    onPressed: () {
+                      if (_textController.text.isNotEmpty) {
+                        // タグ文字列をカンマで分割してリストに変換
+                        final tags = _tagController.text.isNotEmpty
+                            ? _tagController.text.split(',').map((e) => e.trim()).toList()
+                            : <String>[];
+
+                        memoNotifier.addMemo(_textController.text, tags: tags);
+                        _textController.clear();
+                        _tagController.clear();
+                      }
+                    },
+                  ),
                 ),
               ],
             ),
@@ -75,20 +101,38 @@ class _MemoPageState extends State<MemoPage> {
                     return InkWell(
                       onTap: () {
                         // 編集用ダイアログ
-                        final editController =
-                            TextEditingController(text: memo.text);
+                        final editTextController =
+                        TextEditingController(text: memo.text);
+                        // タグはカンマ区切りの文字列に変換して表示
+                        final editTagController =
+                        TextEditingController(text: memo.tags.join(', '));
 
                         showDialog(
                           context: context,
                           builder: (dialogContext) {
                             return AlertDialog(
                               title: const Text('メモを編集'),
-                              content: TextField(
-                                controller: editController,
-                                maxLines: null,
-                                decoration: const InputDecoration(
-                                  labelText: 'メモを編集してください',
-                                  border: OutlineInputBorder(),
+                              content: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: editTextController,
+                                      maxLines: null,
+                                      decoration: const InputDecoration(
+                                        labelText: 'メモを編集してください',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8.0),
+                                    TextField(
+                                      controller: editTagController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'タグを編集してください (例: 仕事,プライベート)',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               actions: [
@@ -99,9 +143,18 @@ class _MemoPageState extends State<MemoPage> {
                                 ),
                                 TextButton(
                                   onPressed: () {
+                                    // 編集時も同様にタグ文字列をリストへ変換
+                                    final updatedTags = editTagController.text.isNotEmpty
+                                        ? editTagController.text
+                                        .split(',')
+                                        .map((e) => e.trim())
+                                        .toList()
+                                        : <String>[];
+
                                     memoNotifier.updateMemo(
                                       index,
-                                      editController.text,
+                                      newText: editTextController.text,
+                                      newTags: updatedTags,
                                     );
                                     Navigator.of(dialogContext).pop();
                                   },
@@ -121,19 +174,32 @@ class _MemoPageState extends State<MemoPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(memo.text,
-                                  style: const TextStyle(fontSize: 16)),
+                              Text(
+                                memo.text,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 8.0),
+                              // タグ表示（Chipで一覧表示）
+                              Wrap(
+                                spacing: 4.0,
+                                children: memo.tags.map((tag) {
+                                  return Chip(
+                                    label: Text(tag),
+                                    backgroundColor: Colors.grey.shade200,
+                                  );
+                                }).toList(),
+                              ),
+                              const SizedBox(height: 8.0),
                               Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
                                     icon: Icon(
                                       memo.isPinned
                                           ? Icons.push_pin
                                           : Icons.push_pin_outlined,
-                                      color:
-                                          memo.isPinned ? Colors.orange : Colors.grey,
+                                      color: memo.isPinned ? Colors.orange : Colors.grey,
                                     ),
                                     onPressed: () =>
                                         memoNotifier.togglePin(index),

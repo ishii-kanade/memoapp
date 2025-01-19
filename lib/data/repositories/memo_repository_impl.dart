@@ -20,6 +20,7 @@ class MemoRepositoryImpl implements MemoRepository {
       return MemoModel(
         text: entity.text,
         isPinned: entity.isPinned,
+        tags: entity.tags,
       );
     }).toList();
 
