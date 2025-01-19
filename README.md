@@ -1,16 +1,30 @@
-# memoapp
+# MemoApp
 
-A new Flutter project.
+A new Flutter project built with Clean Architecture in mind. This project demonstrates how to structure a Flutter application using clear separation of concerns, making it maintainable, testable, and extensible.
 
-## Getting Started
+## Overview
 
-This project is a starting point for a Flutter application.
+MemoApp leverages Clean Architecture to divide the codebase into distinct layers:
 
-A few resources to get you started if this is your first Flutter project:
+- **Domain Layer:** Contains business logic, including entities and use cases.
+- **Data Layer:** Handles data-related operations such as JSON parsing, file I/O, and interactions with external APIs or local storage.
+- **Presentation Layer:** Manages UI components, state management, and user interactions.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+This approach allows each layer to focus on its core responsibilities, ensuring that changes in one layer have minimal impact on the others. It also makes the application easier to test, as you can mock dependencies and verify business logic independently from the UI and data layers.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Project Structure
+
+Here's a brief overview of the project structure:
+
+```
+/lib
+  ├─ /data         # Data layer: repositories, data sources, and models
+  ├─ /domain       # Domain layer: business logic, entities, use cases, and repository abstractions
+  └─ /presentation # Presentation layer: UI components, state management, and pages
+```
+
+By following Clean Architecture principles, MemoApp remains organized and easily adaptable to future changes.
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
