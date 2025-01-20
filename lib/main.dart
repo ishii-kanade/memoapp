@@ -35,6 +35,21 @@ StateNotifierProvider<MemoNotifier, List<MemoEntity>>((ref) {
     ..loadMemos(); // 初期ロード
 });
 
+// 検索機能プロバイダー
+final searchQueryProvider = StateProvider<String>((ref) => '');
+
+final filteredMemosProvider = Provider<List<MemoEntity>>((ref) {
+  final memos = ref.watch(memoNotifierProvider); // 全メモ
+  final query = ref.watch(searchQueryProvider).toLowerCase(); // 検索クエリ
+
+  if (query.isEmpty) return memos;
+
+  // タグでフィルタリング
+  return memos.where((memo) {
+    return memo.tags.any((tag) => tag.toLowerCase().contains(query));
+  }).toList();
+});
+
 void main() {
   runApp(const ProviderScope(child: MyApp()));
 }

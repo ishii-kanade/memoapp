@@ -32,8 +32,8 @@ class _MemoPageState extends ConsumerState<MemoPage> {
   @override
   Widget build(BuildContext context) {
     // memosをProviderから取得
-    final memos = ref.watch(memoNotifierProvider);
     final memoNotifier = ref.read(memoNotifierProvider.notifier);
+    final memos = ref.watch(filteredMemosProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,6 +41,21 @@ class _MemoPageState extends ConsumerState<MemoPage> {
       ),
       body: Column(
         children: [
+          // 検索ボックス
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: 'タグで検索',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (query) {
+                // MemoNotifier に直接検索クエリを送信
+                ref.read(searchQueryProvider.notifier).state = query;
+              },
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
@@ -70,7 +85,10 @@ class _MemoPageState extends ConsumerState<MemoPage> {
                     onPressed: () {
                       if (_textController.text.isNotEmpty) {
                         final tags = _tagController.text.isNotEmpty
-                            ? _tagController.text.split(',').map((e) => e.trim()).toList()
+                            ? _tagController.text
+                            .split(',')
+                            .map((e) => e.trim())
+                            .toList()
                             : <String>[];
                         memoNotifier.addMemo(_textController.text, tags: tags);
                         _textController.clear();
@@ -118,7 +136,8 @@ class _MemoPageState extends ConsumerState<MemoPage> {
                                     TextField(
                                       controller: editTagController,
                                       decoration: const InputDecoration(
-                                        labelText: 'タグを編集してください (例: 仕事,プライベート)',
+                                        labelText:
+                                        'タグを編集してください (例: 仕事,プライベート)',
                                         border: OutlineInputBorder(),
                                       ),
                                     ),
@@ -133,8 +152,12 @@ class _MemoPageState extends ConsumerState<MemoPage> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    final updatedTags = editTagController.text.isNotEmpty
-                                        ? editTagController.text.split(',').map((e) => e.trim()).toList()
+                                    final updatedTags = editTagController.text
+                                        .isNotEmpty
+                                        ? editTagController.text
+                                        .split(',')
+                                        .map((e) => e.trim())
+                                        .toList()
                                         : <String>[];
                                     memoNotifier.updateMemo(
                                       index,
