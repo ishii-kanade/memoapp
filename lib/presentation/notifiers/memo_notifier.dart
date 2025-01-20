@@ -15,24 +15,39 @@ class MemoNotifier extends StateNotifier<List<MemoEntity>> {
   // メモをロード
   Future<void> loadMemos() async {
     final loadedMemos = await getMemosUseCase();
-    state = List<MemoEntity>.from(loadedMemos);
+    state = List<MemoEntity>.from(loadedMemos)
+      ..sort((a, b) => b.lastEdited.compareTo(a.lastEdited)); // 最新順に並び替え
   }
 
   // メモを追加
   Future<void> addMemo(String text, {List<String> tags = const []}) async {
-    final newMemo = MemoEntity(text: text, tags: tags);
-    state = [...state, newMemo];
+    final newMemo = MemoEntity(
+      text: text,
+      tags: tags,
+      lastEdited: DateTime.now(), // 現在時刻を設定
+    );
+
+    // 新しいメモをリストの先頭に挿入
+    state = [newMemo, ...state];
+
+    // 保存
     await saveMemosUseCase(state);
   }
 
+
   // メモを更新
   Future<void> updateMemo(int index, {required String newText, required List<String> newTags}) async {
-    final updatedMemo = state[index].copyWith(text: newText, tags: newTags);
+    final updatedMemo = state[index].copyWith(
+      text: newText,
+      tags: newTags,
+      lastEdited: DateTime.now(), // 最新の日付を設定
+    );
     state = [
       for (int i = 0; i < state.length; i++) i == index ? updatedMemo : state[i]
-    ];
+    ]..sort((a, b) => b.lastEdited.compareTo(a.lastEdited)); // 日付順に並び替え
     await saveMemosUseCase(state);
   }
+
 
   // メモを削除
   Future<void> deleteMemo(int index) async {
@@ -49,19 +64,5 @@ class MemoNotifier extends StateNotifier<List<MemoEntity>> {
       for (int i = 0; i < state.length; i++) i == index ? toggledMemo : state[i]
     ]..sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
     await saveMemosUseCase(state);
-  }
-}
-
-extension CopyWith on MemoEntity {
-  MemoEntity copyWith({
-    String? text,
-    List<String>? tags,
-    bool? isPinned,
-  }) {
-    return MemoEntity(
-      text: text ?? this.text,
-      tags: tags ?? this.tags,
-      isPinned: isPinned ?? this.isPinned,
-    );
   }
 }

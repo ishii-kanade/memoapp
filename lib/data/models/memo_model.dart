@@ -1,27 +1,20 @@
+import 'package:json_annotation/json_annotation.dart';
 import '../../domain/entities/memo_entity.dart';
 
+part 'memo_model.g.dart'; // 自動生成ファイルの名前
+
+@JsonSerializable()
 class MemoModel extends MemoEntity {
   const MemoModel({
     required super.text,
     super.isPinned,
     super.tags,
+    required super.lastEdited,
   });
 
-  factory MemoModel.fromJson(Map<String, dynamic> json) {
-    return MemoModel(
-      text: json['text'] as String,
-      isPinned: json['isPinned'] as bool? ?? false,
-      tags: (json['tags'] as List<dynamic>?)
-          ?.map((tag) => tag as String)
-          .toList() ?? [],
-    );
-  }
+  // JSON からインスタンスを生成
+  factory MemoModel.fromJson(Map<String, dynamic> json) => _$MemoModelFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'text': text,
-      'isPinned': isPinned,
-      'tags': tags,
-    };
-  }
+  // インスタンスを JSON に変換
+  Map<String, dynamic> toJson() => _$MemoModelToJson(this);
 }

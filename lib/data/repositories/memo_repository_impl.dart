@@ -21,6 +21,7 @@ class MemoRepositoryImpl implements MemoRepository {
         text: entity.text,
         isPinned: entity.isPinned,
         tags: entity.tags,
+        lastEdited: entity.lastEdited,
       );
     }).toList();
 
