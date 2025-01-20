@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../notifiers/memo_notifier.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../main.dart';
 
-class MemoPage extends StatefulWidget {
-  const MemoPage({Key? key}) : super(key: key);
+class MemoPage extends ConsumerStatefulWidget {
+  const MemoPage({super.key});
 
   @override
-  State<MemoPage> createState() => _MemoPageState();
+  ConsumerState<MemoPage> createState() => _MemoPageState();
 }
 
-class _MemoPageState extends State<MemoPage> {
+class _MemoPageState extends ConsumerState<MemoPage> {
   final _textController = TextEditingController();
   final _tagController = TextEditingController();
 
@@ -18,7 +18,7 @@ class _MemoPageState extends State<MemoPage> {
     super.initState();
     // Widgetがビルドされた後にメモをロード
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MemoNotifier>().loadMemos();
+      ref.read(memoNotifierProvider.notifier).loadMemos();
     });
   }
 
@@ -31,8 +31,9 @@ class _MemoPageState extends State<MemoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final memoNotifier = context.watch<MemoNotifier>();
-    final memos = memoNotifier.memos;
+    // memosをProviderから取得
+    final memos = ref.watch(memoNotifierProvider);
+    final memoNotifier = ref.read(memoNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -40,12 +41,10 @@ class _MemoPageState extends State<MemoPage> {
       ),
       body: Column(
         children: [
-          // 新規メモ入力フォーム
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
-                // メモの本文入力フィールド
                 TextField(
                   controller: _textController,
                   maxLines: null,
@@ -55,7 +54,6 @@ class _MemoPageState extends State<MemoPage> {
                   ),
                 ),
                 const SizedBox(height: 8.0),
-                // タグ入力フィールド（カンマ区切りで複数入力）
                 TextField(
                   controller: _tagController,
                   decoration: const InputDecoration(
@@ -64,7 +62,6 @@ class _MemoPageState extends State<MemoPage> {
                   ),
                 ),
                 const SizedBox(height: 8.0),
-                // 追加ボタン
                 Align(
                   alignment: Alignment.centerRight,
                   child: ElevatedButton.icon(
@@ -72,11 +69,9 @@ class _MemoPageState extends State<MemoPage> {
                     label: const Text('追加'),
                     onPressed: () {
                       if (_textController.text.isNotEmpty) {
-                        // タグ文字列をカンマで分割してリストに変換
                         final tags = _tagController.text.isNotEmpty
                             ? _tagController.text.split(',').map((e) => e.trim()).toList()
                             : <String>[];
-
                         memoNotifier.addMemo(_textController.text, tags: tags);
                         _textController.clear();
                         _tagController.clear();
@@ -87,8 +82,6 @@ class _MemoPageState extends State<MemoPage> {
               ],
             ),
           ),
-
-          // メモ一覧
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -100,13 +93,10 @@ class _MemoPageState extends State<MemoPage> {
                     final memo = memos[index];
                     return InkWell(
                       onTap: () {
-                        // 編集用ダイアログ
                         final editTextController =
                         TextEditingController(text: memo.text);
-                        // タグはカンマ区切りの文字列に変換して表示
                         final editTagController =
                         TextEditingController(text: memo.tags.join(', '));
-
                         showDialog(
                           context: context,
                           builder: (dialogContext) {
@@ -143,14 +133,9 @@ class _MemoPageState extends State<MemoPage> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    // 編集時も同様にタグ文字列をリストへ変換
                                     final updatedTags = editTagController.text.isNotEmpty
-                                        ? editTagController.text
-                                        .split(',')
-                                        .map((e) => e.trim())
-                                        .toList()
+                                        ? editTagController.text.split(',').map((e) => e.trim()).toList()
                                         : <String>[];
-
                                     memoNotifier.updateMemo(
                                       index,
                                       newText: editTextController.text,
@@ -179,7 +164,6 @@ class _MemoPageState extends State<MemoPage> {
                                 style: const TextStyle(fontSize: 16),
                               ),
                               const SizedBox(height: 8.0),
-                              // タグ表示（Chipで一覧表示）
                               Wrap(
                                 spacing: 4.0,
                                 children: memo.tags.map((tag) {
@@ -199,13 +183,16 @@ class _MemoPageState extends State<MemoPage> {
                                       memo.isPinned
                                           ? Icons.push_pin
                                           : Icons.push_pin_outlined,
-                                      color: memo.isPinned ? Colors.orange : Colors.grey,
+                                      color: memo.isPinned
+                                          ? Colors.orange
+                                          : Colors.grey,
                                     ),
                                     onPressed: () =>
                                         memoNotifier.togglePin(index),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
                                     onPressed: () =>
                                         memoNotifier.deleteMemo(index),
                                   ),
