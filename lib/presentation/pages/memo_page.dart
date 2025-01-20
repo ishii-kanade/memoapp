@@ -59,7 +59,9 @@ class _MemoPageState extends ConsumerState<MemoPage> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // メモ入力フィールド
                 TextField(
                   controller: _textController,
                   maxLines: null,
@@ -69,37 +71,71 @@ class _MemoPageState extends ConsumerState<MemoPage> {
                   ),
                 ),
                 const SizedBox(height: 8.0),
-                TextField(
-                  controller: _tagController,
-                  decoration: const InputDecoration(
-                    labelText: 'タグを入力してください (例: 仕事,プライベート)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 8.0),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: const Text('追加'),
-                    onPressed: () {
-                      if (_textController.text.isNotEmpty) {
-                        final tags = _tagController.text.isNotEmpty
-                            ? _tagController.text
-                            .split(',')
-                            .map((e) => e.trim())
-                            .toList()
-                            : <String>[];
-                        memoNotifier.addMemo(_textController.text, tags: tags);
-                        _textController.clear();
-                        _tagController.clear();
-                      }
-                    },
-                  ),
+
+                // オプションと追加ボタン
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // タグ追加ボタン
+                    IconButton(
+                      icon: const Icon(Icons.tag),
+                      tooltip: 'タグを追加',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (dialogContext) {
+                            return AlertDialog(
+                              title: const Text('タグを追加'),
+                              content: TextField(
+                                controller: _tagController,
+                                decoration: const InputDecoration(
+                                  labelText: 'タグを入力 (例: 仕事,プライベート)',
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                                  child: const Text('キャンセル'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                                  child: const Text('追加'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    // メモ追加ボタン
+                    IconButton(
+                      icon: const Icon(Icons.add_circle, size: 30, color: Colors.blue),
+                      tooltip: 'メモを追加',
+                      onPressed: () {
+                        if (_textController.text.isNotEmpty) {
+                          final tags = _tagController.text.isNotEmpty
+                              ? _tagController.text
+                              .split(',')
+                              .map((e) => e.trim())
+                              .toList()
+                              : <String>[];
+                          memoNotifier.addMemo(_textController.text, tags: tags);
+                          _textController.clear();
+                          _tagController.clear();
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+
+
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
